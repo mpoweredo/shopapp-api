@@ -1,30 +1,27 @@
 package handlers
 
 import (
-	"errors"
-	"fmt"
 	"github.com/gofiber/fiber/v2"
-	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
-	"os"
 	"shop-app-API/database"
 	"shop-app-API/models"
+	"shop-app-API/resources"
 	"shop-app-API/utils"
-	"strconv"
 	"strings"
-	"time"
 )
 
-type SignUpInput struct {
+type SignupInput struct {
 	Username        string `json:"username" validate:"required,min=5,max=24"`
 	Email           string `json:"email" validate:"required,email,min=6,max=48"`
-	Password        string `json:"password" validate:"required,min=5,max=24"`
-	PasswordConfirm string `json:"passwordConfirm" validate:"required,min=5,max=24"`
+	Password        string `json:"password" validate:"required,min=5,max=24,eqfield=PasswordConfirm"`
+	PasswordConfirm string `json:"passwordConfirm" validate:"eqfield=Password"`
 }
+
+//https://github.com/go-playground/validator/issues/524
 
 func Signup(c *fiber.Ctx) error {
 
-	b := SignUpInput{}
+	b := SignupInput{}
 
 	if err := c.BodyParser(&b); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -46,10 +43,8 @@ func Signup(c *fiber.Ctx) error {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(b.Password), bcrypt.DefaultCost)
 
 	if err != nil {
-		return err
+		return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{"message": "Something went wrong while encrypting password"})
 	}
-
-	fmt.Println(string(hashedPassword))
 
 	user := models.User{
 		Username: b.Username,
@@ -60,12 +55,17 @@ func Signup(c *fiber.Ctx) error {
 	result := database.DB.Create(&user)
 
 	if result.Error != nil && strings.Contains(result.Error.Error(), "Duplicate entry") {
-		return c.Status(fiber.StatusConflict).JSON(fiber.Map{"message": "User with that email already exists"})
+		return c.Status(fiber.StatusConflict).JSON(fiber.Map{
+			"errorFields": []utils.ErrorResponse{
+				utils.ErrorResponse{Field: "passwordConfirm", Message: "Passwords do not match"},
+				utils.ErrorResponse{Field: "password", Message: "Passwords do not match"},
+			},
+		})
 	} else if result.Error != nil {
 		return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{"message": "Something went wrong"})
 	}
 
-	token, exp, err := createJWT(user)
+	token, exp, err := utils.CreateJWT(user)
 
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -82,35 +82,8 @@ func Signup(c *fiber.Ctx) error {
 	})
 
 	return c.Status(200).JSON(fiber.Map{
-		"message": "Added",
-		"token":   token,
-		"expires": exp,
+		"snackbar": resources.SnackbarResponse{Message: "Successfully signed in!", Type: resources.SUCCESS},
+		"token":    token,
+		"expires":  exp,
 	})
-}
-
-func createJWT(user models.User) (string, int64, error) {
-	jwtMaxAge, err := strconv.Atoi(os.Getenv("JWT_MAX_AGE"))
-
-	if err != nil {
-		return "", 0, errors.New("couldn't parse jwtMaxAge")
-	}
-
-	exp := time.Now().Add(time.Minute * time.Duration(jwtMaxAge)).Unix()
-	tokenByte := jwt.New(jwt.SigningMethodHS256)
-
-	claims := tokenByte.Claims.(jwt.MapClaims)
-
-	claims["sub"] = user.Id
-	claims["email"] = user.Email
-	claims["exp"] = exp
-
-	secret := os.Getenv("SECRET")
-
-	t, err := tokenByte.SignedString([]byte(secret))
-
-	if err != nil {
-		return "", 0, errors.New("generating JWT failed")
-	}
-
-	return t, exp, nil
 }
