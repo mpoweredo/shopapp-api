@@ -34,12 +34,6 @@ func Signup(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(errors)
 	}
 
-	if b.Password != b.PasswordConfirm {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "Passwords do not match",
-		})
-	}
-
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(b.Password), bcrypt.DefaultCost)
 
 	if err != nil {
@@ -56,10 +50,7 @@ func Signup(c *fiber.Ctx) error {
 
 	if result.Error != nil && strings.Contains(result.Error.Error(), "Duplicate entry") {
 		return c.Status(fiber.StatusConflict).JSON(fiber.Map{
-			"errorFields": []utils.ErrorResponse{
-				utils.ErrorResponse{Field: "passwordConfirm", Message: "Passwords do not match"},
-				utils.ErrorResponse{Field: "password", Message: "Passwords do not match"},
-			},
+			"snackbar": resources.SnackbarResponse{Message: "Account with this email already exists!", Type: resources.ERROR},
 		})
 	} else if result.Error != nil {
 		return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{"message": "Something went wrong"})
