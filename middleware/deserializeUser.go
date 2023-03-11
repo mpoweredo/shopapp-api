@@ -45,9 +45,7 @@ func DeserializeUser(c *fiber.Ctx) error {
 
 	database.DB.First(&user, "id = ?", fmt.Sprint(claims["sub"]))
 
-	fmt.Println(user.Id)
-
-	if user.Id != claims["sub"] {
+	if float64(user.Id) != claims["sub"] {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"message": "The user belonging to this token does not exist"})
 	}
 
