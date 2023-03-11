@@ -1,4 +1,4 @@
-package handlers
+package auth
 
 import (
 	"github.com/gofiber/fiber/v2"
@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-type SignupInput struct {
+type SignupRequest struct {
 	Username        string `json:"username" validate:"required,min=5,max=24"`
 	Email           string `json:"email" validate:"required,email,min=6,max=48"`
 	Password        string `json:"password" validate:"required,min=5,max=24,eqfield=PasswordConfirm"`
@@ -21,7 +21,7 @@ type SignupInput struct {
 
 func Signup(c *fiber.Ctx) error {
 
-	b := SignupInput{}
+	b := SignupRequest{}
 
 	if err := c.BodyParser(&b); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -73,7 +73,7 @@ func Signup(c *fiber.Ctx) error {
 	})
 
 	return c.Status(200).JSON(fiber.Map{
-		"snackbar": resources.SnackbarResponse{Message: "Successfully signed in!", Type: resources.SUCCESS},
+		"snackbar": resources.SnackbarResponse{Message: "Successfully signed up!", Type: resources.SUCCESS},
 		"token":    token,
 		"expires":  exp,
 	})

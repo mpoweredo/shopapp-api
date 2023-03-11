@@ -1,4 +1,4 @@
-package handlers
+package auth
 
 import (
 	"fmt"
@@ -6,17 +6,18 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"shop-app-API/database"
 	"shop-app-API/models"
+	"shop-app-API/resources"
 	"shop-app-API/utils"
 )
 
-type SigninInput struct {
+type SigninRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
 
 func Signin(c *fiber.Ctx) error {
 
-	b := SigninInput{}
+	b := SigninRequest{}
 
 	if err := c.BodyParser(&b); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -29,13 +30,17 @@ func Signin(c *fiber.Ctx) error {
 	result := database.DB.First(&user, "email = ?", b.Email)
 
 	if result.Error != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "Credentials are invalid"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"snackbar": resources.SnackbarResponse{Message: "Credentials are invalid!", Type: resources.ERROR},
+		})
 	}
 
 	err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(b.Password))
 
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "Credentials are invalid"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"snackbar": resources.SnackbarResponse{Message: "Credentials are invalid!", Type: resources.ERROR},
+		})
 	}
 
 	fmt.Println(user)
@@ -57,9 +62,9 @@ func Signin(c *fiber.Ctx) error {
 	})
 
 	return c.Status(200).JSON(fiber.Map{
-		"message": "Successfully signed in!",
-		"token":   token,
-		"expires": exp,
+		"snackbar": resources.SnackbarResponse{Message: "Successfully signed in!", Type: resources.SUCCESS},
+		"token":    token,
+		"expires":  exp,
 	})
 
 }
