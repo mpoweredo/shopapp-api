@@ -17,8 +17,6 @@ type SignupRequest struct {
 	PasswordConfirm string `json:"passwordConfirm" validate:"eqfield=Password"`
 }
 
-//https://github.com/go-playground/validator/issues/524
-
 func Signup(c *fiber.Ctx) error {
 
 	b := SignupRequest{}

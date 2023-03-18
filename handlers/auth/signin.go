@@ -11,7 +11,7 @@ import (
 )
 
 type SigninRequest struct {
-	Email    string `json:"email"`
+	Email    string `json:"email" validate:"required,email,min=6,max=48"`
 	Password string `json:"password"`
 }
 
@@ -23,6 +23,12 @@ func Signin(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": err.Error(),
 		})
+	}
+
+	errors := utils.ValidateStruct(b)
+
+	if errors != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(errors)
 	}
 
 	var user models.User
