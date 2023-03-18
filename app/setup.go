@@ -18,7 +18,10 @@ func SetupAndRunApp() error {
 		return err
 	}
 
-	app := fiber.New()
+	app := fiber.New(
+		fiber.Config{
+			BodyLimit: 4 * 1024 * 1024, // limit 4mb
+		})
 
 	database.Connect()
 
