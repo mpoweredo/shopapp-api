@@ -6,6 +6,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	en_translations "github.com/go-playground/validator/v10/translations/en"
 	"github.com/gofiber/fiber/v2"
+	"unicode"
 )
 
 type ErrorResponse struct {
@@ -30,7 +31,11 @@ func ValidateStruct[T any](payload T) fiber.Map {
 		for _, err := range err.(validator.ValidationErrors) {
 			var element ErrorResponse
 
-			element.Field = err.Field()
+			runes := []rune(err.Field())
+
+			runes[0] = unicode.ToLower(runes[0])
+
+			element.Field = string(runes)
 			element.Message = err.Translate(trans)
 
 			if err.Field() == "PasswordConfirm" || err.Field() == "Password" {
