@@ -6,6 +6,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	en_translations "github.com/go-playground/validator/v10/translations/en"
 	"github.com/gofiber/fiber/v2"
+	"strings"
 	"unicode"
 )
 
@@ -34,9 +35,8 @@ func ValidateStruct[T any](payload T) fiber.Map {
 			runes := []rune(err.Field())
 
 			runes[0] = unicode.ToLower(runes[0])
-
 			element.Field = string(runes)
-			element.Message = err.Translate(trans)
+			element.Message = convertCamelCase(err.Translate(trans))
 
 			if err.Field() == "PasswordConfirm" || err.Field() == "Password" {
 				if err.Translate(trans) == "Password must be equal to PasswordConfirm" || err.Translate(trans) == "PasswordConfirm must be equal to Password" {
@@ -51,4 +51,22 @@ func ValidateStruct[T any](payload T) fiber.Map {
 		return fiber.Map{"errorFields": errors}
 	}
 	return nil
+}
+
+func convertCamelCase(input string) string {
+	var output strings.Builder
+	for i, r := range input {
+		if unicode.IsUpper(r) {
+			if i > 0 && unicode.IsLower(rune(input[i-1])) {
+				output.WriteString(" ")
+			}
+			output.WriteRune(unicode.ToLower(r))
+		} else {
+			output.WriteRune(r)
+		}
+	}
+
+	s := output.String()
+
+	return strings.ToUpper(s[0:1]) + s[1:]
 }
