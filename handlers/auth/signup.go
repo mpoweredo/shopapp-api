@@ -22,9 +22,7 @@ func Signup(c *fiber.Ctx) error {
 	b := SignupRequest{}
 
 	if err := c.BodyParser(&b); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": err.Error(),
-		})
+		return utils.ReturnFiberError(c, err.Error())
 	}
 
 	errors := utils.ValidateStruct(b)
@@ -35,7 +33,7 @@ func Signup(c *fiber.Ctx) error {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(b.Password), bcrypt.DefaultCost)
 
 	if err != nil {
-		return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{"message": "Something went wrong while encrypting password"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "Something went wrong while encrypting password"})
 	}
 
 	user := models.User{
@@ -51,15 +49,13 @@ func Signup(c *fiber.Ctx) error {
 			"snackbar": resources.SnackbarResponse{Message: "Account with this email already exists!", Type: resources.ERROR},
 		})
 	} else if result.Error != nil {
-		return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{"message": "Something went wrong"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "Something went wrong"})
 	}
 
 	token, exp, err := utils.CreateJWT(user)
 
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "Error while parsing JWT",
-		})
+		return utils.ReturnFiberError(c, "Error while parsing JWT")
 	}
 
 	c.Cookie(&fiber.Cookie{

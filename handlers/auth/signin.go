@@ -20,9 +20,8 @@ func Signin(c *fiber.Ctx) error {
 	b := SigninRequest{}
 
 	if err := c.BodyParser(&b); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": err.Error(),
-		})
+		return utils.ReturnFiberError(c, err.Error())
+
 	}
 
 	errors := utils.ValidateStruct(b)
@@ -54,9 +53,7 @@ func Signin(c *fiber.Ctx) error {
 	token, exp, err := utils.CreateJWT(user)
 
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "Error while parsing JWT",
-		})
+		return utils.ReturnFiberError(c, "Error while parsing JWT")
 	}
 
 	c.Cookie(&fiber.Cookie{

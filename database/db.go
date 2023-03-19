@@ -24,7 +24,7 @@ func Connect() error {
 		DisableForeignKeyConstraintWhenMigrating: true,
 	})
 
-	err = DB.AutoMigrate(&models.User{})
+	err = DB.AutoMigrate(&models.DeliveryAddresses{}, &models.User{})
 	if err != nil {
 		log.Fatal("Migration Failed:  \n", err.Error())
 		os.Exit(1)
