@@ -6,7 +6,7 @@ import (
 )
 
 func GetUser(c *fiber.Ctx) models.User {
-	user := c.Locals("profile").(models.User)
+	user := c.Locals("user").(models.User)
 
 	return user
 }

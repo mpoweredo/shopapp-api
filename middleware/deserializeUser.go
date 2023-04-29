@@ -49,7 +49,7 @@ func DeserializeUser(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"message": "The profile belonging to this token does not exist"})
 	}
 
-	c.Locals("profile", user)
+	c.Locals("user", user)
 
 	return c.Next()
 }
