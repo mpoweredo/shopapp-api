@@ -12,6 +12,7 @@ func SetupRoutes(app *fiber.App) {
 	authGroup.Post("/signin", auth.Signin)
 	authGroup.Post("/signup", auth.Signup)
 	authGroup.Post("/logout", auth.Logout)
+	authGroup.Get("/generalData", middleware.DeserializeUser, auth.GetAuthGeneralData)
 
 	userGroup := app.Group("/profile")
 	userGroup.Post("/details", middleware.DeserializeUser, profile.UpdateProfileDetails)
